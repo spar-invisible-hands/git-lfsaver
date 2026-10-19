@@ -19,8 +19,9 @@ import { selfIssuedTokenIssuer } from '../src/self-issued'
 const mime = 'application/vnd.git-lfs+json'
 const oidA = 'a'.repeat(64)
 const oidB = 'b'.repeat(64)
-// The oidA digest as the S3 checksum headers carry it: 32 bytes of 0xaa, base64-encoded
-const oidABase64 = 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo='
+// The oidA digest as the S3 checksum headers carry it: 32 bytes of 0xaa,
+// base64-encoded (ten full 3-byte groups of "qqqq", then the 2-byte tail "qqo=")
+const oidABase64 = `${'q'.repeat(42)}o=`
 const repositoryId = 12_345_678
 
 // Must match the fake bindings in vitest.config.ts
