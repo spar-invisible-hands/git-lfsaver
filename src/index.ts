@@ -1076,10 +1076,12 @@ async function sign(
 
 	// Signing content-length caps how many bytes the client can PUT with this
 	// URL, and x-amz-checksum-sha256 declares the exact expected bytes, which
-	// R2 enforces on presigned uploads (400 BadDigest on mismatch) and records
-	// on the stored object. x-amz-content-sha256 would not do: for presigned
-	// requests R2 computes the signature over UNSIGNED-PAYLOAD regardless of
-	// that header, so signing it only produces SignatureDoesNotMatch. The
+	// R2 enforces on presigned uploads (400 BadDigest on mismatch, nothing
+	// stored) and records on the stored object. x-amz-content-sha256 would not
+	// do: SigV4 presigned URLs always carry UNSIGNED-PAYLOAD in the canonical
+	// request's hashed-payload slot, but aws4fetch copies that header's value
+	// into the slot instead, so the signature it produces can never match the
+	// one any S3-compatible provider computes (SignatureDoesNotMatch). The
 	// client must send both headers verbatim; aws4fetch only signs them when
 	// allHeaders is set
 	const headers: Record<string, string> =
