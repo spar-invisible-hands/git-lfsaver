@@ -430,6 +430,9 @@ describe('upload batch', () => {
 		expect(url.searchParams.get('X-Amz-Credential')?.startsWith(`${readWriteKeyId}/`)).toBe(true)
 		// The client must send the signed checksum header verbatim, base64-encoded
 		expect(upload.header?.['x-amz-checksum-sha256']).toBe(oidABase64)
+		// The verify action needs the client's credentials, which git-lfs only
+		// sends when the object is not marked authenticated
+		expect(object.authenticated).toBe(false)
 		expect(object.actions?.verify?.href).toBe(
 			'https://example.com/kitschpatrol/repo/objects/verify',
 		)

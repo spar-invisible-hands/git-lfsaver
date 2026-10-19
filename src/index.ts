@@ -1195,7 +1195,11 @@ async function processObject(
 				href: verifyUrl,
 			},
 		},
-		authenticated: true,
+		// Not pre-authenticated: git-lfs sends no credentials at all to the
+		// actions of an object marked authenticated, and the verify endpoint
+		// needs them. The presigned upload href still goes out bare, since the
+		// client has no access mode configured for the storage host
+		authenticated: false,
 		oid,
 		size,
 	} satisfies GitLfsBatchResponseObject
