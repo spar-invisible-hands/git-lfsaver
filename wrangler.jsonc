@@ -17,7 +17,7 @@
 	"routes": [
 		{
 			// Your domain
-			"pattern": "lfs.kitschpatrol.com",
+			"pattern": "lfs.invisible-hands.com",
 			"custom_domain": true,
 		},
 	],
@@ -29,7 +29,7 @@
 	"vars": {
 		/* GitHub owners (users or orgs) whose repos may use this server. An
 		 * empty array rejects everyone. Not consulted for self-issued repos. */
-		"GITHUB_ALLOWED_OWNERS": ["kitschpatrol"],
+		"GITHUB_ALLOWED_OWNERS": ["spar-invisible-hands"],
 		/* Some clients might not set headers correctly... */
 		"ENFORCE_MIME": true,
 		/* Pre-signed URL expiry in seconds. Expiry gates when a transfer may
@@ -41,7 +41,7 @@
 		 * only, so lowering it never strands objects already in storage.
 		 * See https://developers.cloudflare.com/r2/platform/limits/
 		 */
-		"MAX_UPLOAD_FILE_SIZE": 4995000000,
+		"MAX_UPLOAD_FILE_SIZE": 200000000,
 		/* Base64url Ed25519 public key used to verify self-issued tokens for
 		 * repos that aren't on GitHub. Generate a key pair with
 		 * `pnpm run token generate-key` and paste the printed value here.
