@@ -1056,6 +1056,13 @@ function getObjectUrl(env: Env, storagePrefix: string, oid: string): string {
 	return `https://${env.S3_BUCKET}.${env.S3_ENDPOINT}/${storagePrefix}/${oid}`
 }
 
+/** The S3 checksum headers carry the digest base64-encoded, not hex */
+function hexToBase64(hex: string): string {
+	const bytes = hex.match(/.{2}/gv) ?? []
+	// eslint-disable-next-line no-restricted-globals
+	return btoa(String.fromCodePoint(...bytes.map((byte) => Number.parseInt(byte, 16))))
+}
+
 async function sign(
 	s3: AwsClient,
 	env: Env,
@@ -1068,15 +1075,21 @@ async function sign(
 	url.searchParams.set('X-Amz-Expires', String(env.EXPIRY))
 
 	// Signing content-length caps how many bytes the client can PUT with this
-	// URL, and x-amz-content-sha256 declares the exact expected bytes, enforced
-	// by providers that validate it on presigned uploads. The client must send
-	// both headers verbatim; aws4fetch only signs them when allHeaders is set
+	// URL, and x-amz-checksum-sha256 declares the exact expected bytes, which
+	// R2 enforces on presigned uploads (400 BadDigest on mismatch, nothing
+	// stored) and records on the stored object. x-amz-content-sha256 would not
+	// do: SigV4 presigned URLs always carry UNSIGNED-PAYLOAD in the canonical
+	// request's hashed-payload slot, but aws4fetch copies that header's value
+	// into the slot instead, so the signature it produces can never match the
+	// one any S3-compatible provider computes (SignatureDoesNotMatch). The
+	// client must send both headers verbatim; aws4fetch only signs them when
+	// allHeaders is set
 	const headers: Record<string, string> =
 		uploadConstraints === undefined
 			? {}
 			: {
 					'content-length': String(uploadConstraints.contentLength),
-					'x-amz-content-sha256': uploadConstraints.contentSha256,
+					'x-amz-checksum-sha256': hexToBase64(uploadConstraints.contentSha256),
 				}
 
 	const signed = await s3.sign(url.href, {
@@ -1164,8 +1177,8 @@ async function processObject(
 	}
 
 	// The OID is the SHA-256 of the content, so signing it as the expected
-	// payload hash makes storage content-addressed: only the correct bytes can
-	// land at an object's address (on providers that enforce it)
+	// checksum makes storage content-addressed: only the correct bytes can
+	// land at an object's address
 	const signedUrl = await sign(readWriteClient, env, `${storagePrefix}/${oid}`, 'PUT', {
 		contentLength: size,
 		contentSha256: oid,
@@ -1175,7 +1188,7 @@ async function processObject(
 			upload: {
 				expires_in: env.EXPIRY,
 				// Sent by the client verbatim; must match the signed value
-				header: { 'x-amz-content-sha256': oid },
+				header: { 'x-amz-checksum-sha256': hexToBase64(oid) },
 				href: signedUrl,
 			},
 			verify: {

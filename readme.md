@@ -276,7 +276,7 @@ The holder uses the repo's normal `.lfsconfig` (the same owner-qualified URL as 
 
 ### Alternate storage providers
 
-Storage speaks plain SigV4, so any S3-compatible provider that supports presigned URLs and virtual-hosted-style addressing (`https://<bucket>.<endpoint>/…`) should work by pointing `S3_ENDPOINT` at it — though only R2 is tested. Providers that require path-style addressing or an explicit signing region would need small changes. Note that upload integrity enforcement depends on the provider validating the signed `x-amz-content-sha256` header, as R2 does — on providers that ignore it, uploads are still size-capped but not hash-pinned.
+Storage speaks plain SigV4, so any S3-compatible provider that supports presigned URLs and virtual-hosted-style addressing (`https://<bucket>.<endpoint>/…`) should work by pointing `S3_ENDPOINT` at it — though only R2 is tested. Providers that require path-style addressing or an explicit signing region would need small changes. Note that upload integrity enforcement depends on the provider validating the signed `x-amz-checksum-sha256` header on presigned uploads, as R2 does — on providers that ignore it, uploads are still size-capped but not hash-pinned.
 
 ## Limits
 

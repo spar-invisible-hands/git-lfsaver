@@ -19,6 +19,9 @@ import { selfIssuedTokenIssuer } from '../src/self-issued'
 const mime = 'application/vnd.git-lfs+json'
 const oidA = 'a'.repeat(64)
 const oidB = 'b'.repeat(64)
+// The oidA digest as the S3 checksum headers carry it: 32 bytes of 0xaa,
+// base64-encoded (ten full 3-byte groups of "qqqq", then the 2-byte tail "qqo=")
+const oidABase64 = `${'q'.repeat(42)}o=`
 const repositoryId = 12_345_678
 
 // Must match the fake bindings in vitest.config.ts
@@ -419,14 +422,14 @@ describe('upload batch', () => {
 		const url = new URL(upload.href)
 		expect(url.origin).toBe(bucketOrigin)
 		expect(url.pathname).toBe(`/github.com/${repositoryId}/${oidA}`)
-		// Content-length caps the PUT's size and the signed content hash pins
-		// its bytes to the OID
+		// Content-length caps the PUT's size and the signed checksum pins its
+		// bytes to the OID
 		expect(url.searchParams.get('X-Amz-SignedHeaders')).toBe(
-			'content-length;host;x-amz-content-sha256',
+			'content-length;host;x-amz-checksum-sha256',
 		)
 		expect(url.searchParams.get('X-Amz-Credential')?.startsWith(`${readWriteKeyId}/`)).toBe(true)
-		// The client must send the signed hash header verbatim
-		expect(upload.header?.['x-amz-content-sha256']).toBe(oidA)
+		// The client must send the signed checksum header verbatim, base64-encoded
+		expect(upload.header?.['x-amz-checksum-sha256']).toBe(oidABase64)
 		expect(object.actions?.verify?.href).toBe(
 			'https://example.com/kitschpatrol/repo/objects/verify',
 		)
